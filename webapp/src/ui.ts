@@ -35,7 +35,7 @@ export function taskLine(task: Task): string {
       <div class="weight">${task.weight_percent}%</div>
       <div>
         <h3>${esc(task.title)}</h3>
-        <div class="muted">${esc(task.assignee.display_name)}${task.goal_name ? " · " + esc(task.goal_name) : ""}</div>
+        <div class="muted">${esc(task.assignee.display_name)}</div>
       </div>
       ${statusChip(task.status)}
     </article>`;

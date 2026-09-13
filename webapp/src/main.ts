@@ -265,7 +265,8 @@ function taskView(task: Task, owner: boolean): string {
     ${
       mine && task.status !== "closed"
         ? `<div class="section"><h2>Завантажити докази</h2></div>
-           <label class="file-btn">Фото або відео
+           <label class="file-btn">Додати фото або відео
+             <small>обов’язково разом із приміткою перевірки</small>
              <input id="files" type="file" accept="image/*,video/*" multiple />
            </label>
            <div id="picked" class="muted"></div>

@@ -458,12 +458,20 @@ textarea {
 
 .file-btn {
   display: block;
-  border: 1px dashed var(--line);
+  border: 1px dashed color-mix(in srgb, var(--tg-theme-button-color) 45%, var(--line));
   border-radius: 16px;
-  padding: 18px;
+  padding: 18px 16px;
   text-align: center;
-  color: var(--tg-theme-hint-color);
+  color: var(--tg-theme-text-color);
   cursor: pointer;
+  background: color-mix(in srgb, var(--tg-theme-button-color) 8%, transparent);
+}
+
+.file-btn small {
+  display: block;
+  margin-top: 4px;
+  color: var(--tg-theme-hint-color);
+  font-size: 12px;
 }
 
 .file-btn input {
