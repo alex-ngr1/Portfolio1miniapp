@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     bot_token: str = "000000:changeme"
+    bot_username: str = ""
     webapp_url: str = "http://localhost:8080"
     database_url: str = "postgresql://goal:goal@postgres:5432/goaltracker"
     jwt_secret: str = "change-me-to-a-long-random-string"

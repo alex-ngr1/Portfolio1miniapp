@@ -21,6 +21,7 @@ services:
       dockerfile: backend/Dockerfile
     environment:
       BOT_TOKEN: ${BOT_TOKEN:-000000:changeme}
+      BOT_USERNAME: ${BOT_USERNAME:-}
       WEBAPP_URL: ${WEBAPP_URL:-http://localhost:8080}
       DATABASE_URL: postgresql://goal:goal@postgres:5432/goaltracker
       JWT_SECRET: ${JWT_SECRET:-change-me-to-a-long-random-string}

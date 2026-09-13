@@ -44,6 +44,36 @@ function bindNav(el: HTMLElement): void {
   });
 }
 
+let inviteConsumed = false;
+
+function inviteCodeFromLaunch(): string {
+  const params = new URLSearchParams(window.location.search);
+  return (params.get("invite") || tg?.initDataUnsafe?.start_param || "").trim();
+}
+
+function stripInviteFromUrl(): void {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has("invite")) return;
+  url.searchParams.delete("invite");
+  history.replaceState(null, "", url.pathname + url.search + url.hash);
+}
+
+async function maybeRedeemInvite(): Promise<string | null> {
+  if (inviteConsumed) return null;
+  const code = inviteCodeFromLaunch();
+  if (!code) return null;
+  inviteConsumed = true;
+  try {
+    const res = await api.redeem(code);
+    stripInviteFromUrl();
+    return res.goal_id;
+  } catch (e) {
+    error = (e as Error).message;
+    stripInviteFromUrl();
+    return null;
+  }
+}
+
 async function ensureAuth(): Promise<boolean> {
   if (!getToken()) {
     if (hasTelegramUser() && tg) {
@@ -202,16 +232,27 @@ function newTask(goal: GoalDetail): string {
     <div class="actions"><button class="btn" id="save">Додати етап</button></div>`;
 }
 
-function inviteView(goal: GoalDetail, code?: string): string {
+function inviteView(goal: GoalDetail, invite?: { code: string; deep_link: string }): string {
   return `
     ${backBtn(`#/goals/${goal.id}`)}
     <h1>Запросити</h1>
-    <p class="muted">Telegram user id або одноразовий код. Код згорає після входу.</p>
-    <label>Telegram user id</label>
+    <p class="muted">Надішліть виконавцю посилання в Telegram. Після /start Mini App відкриється з кодом і підхопить ціль.</p>
+    <label>Telegram user id (необов’язково)</label>
     <input id="tgid" inputmode="numeric" placeholder="123456789" />
     ${error ? `<div class="err">${esc(error)}</div>` : ""}
     <div class="actions"><button class="btn" id="save">Створити запрошення</button></div>
-    ${code ? `<div class="section"><h2>Код</h2></div><div class="card code">${esc(code)}</div>` : ""}`;
+    ${
+      invite
+        ? `<div class="section"><h2>Посилання</h2></div>
+           <div class="card link-card">
+             <a href="${esc(invite.deep_link)}">${esc(invite.deep_link)}</a>
+           </div>
+           <div class="actions"><button class="btn-ghost" id="copy" type="button">Скопіювати посилання</button></div>
+           <div class="section"><h2>Код</h2></div>
+           <div class="card code">${esc(invite.code)}</div>
+           <p class="muted">Це саме <code>?start=${esc(invite.code)}</code> у t.me. Код одноразовий.</p>`
+        : ""
+    }`;
 }
 
 function joinView(): string {
@@ -312,6 +353,12 @@ async function render(): Promise<void> {
       return;
     }
 
+    const invitedGoal = await maybeRedeemInvite();
+    if (invitedGoal && (path === "/" || path === "")) {
+      go(`/goals/${invitedGoal}`);
+      return;
+    }
+
     if (path === "/" && me?.role === "owner") {
       root.innerHTML = ownerHome(await api.goals());
     } else if (path === "/" && me?.role === "worker") {
@@ -335,20 +382,29 @@ async function render(): Promise<void> {
     } else if (path.startsWith("/goals/") && path.endsWith("/invite")) {
       const id = path.split("/")[2];
       const goal = await api.goal(id);
-      let code = "";
+      let created: { code: string; deep_link: string } | undefined;
       const paint = () => {
-        root.innerHTML = inviteView(goal, code);
+        root.innerHTML = inviteView(goal, created);
         bindNav(root);
         root.querySelector("#save")?.addEventListener("click", async () => {
           const raw = (root.querySelector("#tgid") as HTMLInputElement).value.trim();
           try {
             const inv = await api.invite(id, raw ? Number(raw) : undefined);
-            code = inv.code;
+            created = { code: inv.code, deep_link: inv.deep_link };
             haptic("success");
             paint();
           } catch (e) {
             error = (e as Error).message;
             paint();
+          }
+        });
+        root.querySelector("#copy")?.addEventListener("click", async () => {
+          if (!created) return;
+          try {
+            await navigator.clipboard.writeText(created.deep_link);
+            haptic("success");
+          } catch {
+            haptic("error");
           }
         });
       };

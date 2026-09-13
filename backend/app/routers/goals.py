@@ -9,7 +9,7 @@ from app.access import require_goal, require_member, require_owner
 from app.auth import current_user
 from app.db import get_db
 from app.domain import assert_weight_allowed, DomainError
-from app.invites import add_member, generate_code, redeem_code
+from app.invites import add_member, generate_code, redeem_code, telegram_invite_link
 from app.models import Evidence, Goal, GoalMember, Invite, Task, User, UserRole
 from app.schemas import GoalCreate, GoalDetailOut, GoalListOut, InviteCreate, InviteOut, InviteRedeem, TaskCreate, TaskOut
 from app.serializers import goal_detail_out, goal_list_out, task_out
@@ -172,6 +172,7 @@ def create_invite(
         telegram_id=invite.telegram_id,
         used=invite.used_at is not None,
         added_immediately=added,
+        deep_link=telegram_invite_link(invite.code),
     )
 
 

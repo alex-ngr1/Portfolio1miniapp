@@ -5,7 +5,16 @@ from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.models import Goal, GoalMember, Invite, User
+
+
+def telegram_invite_link(code: str) -> str:
+    username = (settings.bot_username or "").lstrip("@").strip()
+    payload = code.strip().upper()
+    if username:
+        return f"https://t.me/{username}?start={payload}"
+    return f"https://t.me/?start={payload}"
 
 
 def generate_code() -> str:
@@ -45,6 +54,8 @@ def redeem_code(db: Session, user: User, code: str) -> Goal:
     if invite is None:
         raise ValueError("Код запрошення недійсний")
     if invite.used_at is not None:
+        if invite.used_by_id == user.id:
+            return invite.goal
         raise ValueError("Цей код уже використано")
     if invite.telegram_id and invite.telegram_id != user.telegram_id:
         raise ValueError("Цей код призначено іншому Telegram-акаунту")

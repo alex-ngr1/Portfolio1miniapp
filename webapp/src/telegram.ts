@@ -7,7 +7,7 @@ export type TgUser = {
 
 type WebApp = {
   initData: string;
-  initDataUnsafe: { user?: TgUser };
+  initDataUnsafe: { user?: TgUser; start_param?: string };
   ready: () => void;
   expand: () => void;
   colorScheme: "light" | "dark";

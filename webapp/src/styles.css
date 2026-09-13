@@ -485,3 +485,13 @@ textarea {
   text-align: center;
   padding: 16px;
 }
+
+.link-card {
+  word-break: break-all;
+  cursor: default;
+}
+
+.link-card a {
+  font-size: 14px;
+  line-height: 1.4;
+}

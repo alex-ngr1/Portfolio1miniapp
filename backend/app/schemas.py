@@ -116,3 +116,4 @@ class InviteOut(BaseModel):
     telegram_id: int | None
     used: bool
     added_immediately: bool = False
+    deep_link: str

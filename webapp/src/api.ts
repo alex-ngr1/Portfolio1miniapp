@@ -132,10 +132,15 @@ export const api = {
       body: JSON.stringify(payload),
     }),
   invite: (goalId: string, telegram_id?: number) =>
-    request<{ code: string; added_immediately: boolean; telegram_id: number | null }>(
-      `/api/goals/${goalId}/invites`,
-      { method: "POST", body: JSON.stringify({ telegram_id: telegram_id || null }) },
-    ),
+    request<{
+      code: string;
+      added_immediately: boolean;
+      telegram_id: number | null;
+      deep_link: string;
+    }>(`/api/goals/${goalId}/invites`, {
+      method: "POST",
+      body: JSON.stringify({ telegram_id: telegram_id || null }),
+    }),
   redeem: (code: string) =>
     request<{ goal_id: string; name: string }>("/api/invites/redeem", {
       method: "POST",

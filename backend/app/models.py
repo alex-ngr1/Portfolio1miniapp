@@ -21,6 +21,16 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db import Base
 
 
+def values_enum(enum_cls: type[enum.Enum], **kwargs):
+    """Persist enum .value ('owner'), not the member name ('OWNER')."""
+    return Enum(
+        enum_cls,
+        native_enum=False,
+        values_callable=lambda members: [item.value for item in members],
+        **kwargs,
+    )
+
+
 class UserRole(str, enum.Enum):
     OWNER = "owner"
     WORKER = "worker"
@@ -45,7 +55,7 @@ class User(Base):
     username: Mapped[str | None] = mapped_column(String(64))
     first_name: Mapped[str] = mapped_column(String(128))
     last_name: Mapped[str | None] = mapped_column(String(128))
-    role: Mapped[UserRole] = mapped_column(Enum(UserRole, native_enum=False), default=UserRole.WORKER)
+    role: Mapped[UserRole] = mapped_column(values_enum(UserRole), default=UserRole.WORKER)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     owned_goals: Mapped[list[Goal]] = relationship(back_populates="owner")
@@ -104,9 +114,7 @@ class Task(Base):
     description: Mapped[str | None] = mapped_column(Text)
     weight_percent: Mapped[int] = mapped_column(Integer)
     assignee_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), index=True)
-    status: Mapped[TaskStatus] = mapped_column(
-        Enum(TaskStatus, native_enum=False), default=TaskStatus.OPEN, index=True
-    )
+    status: Mapped[TaskStatus] = mapped_column(values_enum(TaskStatus), default=TaskStatus.OPEN, index=True)
     created_by_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
     reject_reason: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -140,7 +148,7 @@ class EvidenceFile(Base):
     stored_name: Mapped[str] = mapped_column(String(255))
     original_name: Mapped[str] = mapped_column(String(255))
     mime_type: Mapped[str] = mapped_column(String(128))
-    kind: Mapped[FileKind] = mapped_column(Enum(FileKind, native_enum=False))
+    kind: Mapped[FileKind] = mapped_column(values_enum(FileKind))
     size_bytes: Mapped[int] = mapped_column(Integer)
 
     evidence: Mapped[Evidence] = relationship(back_populates="files")

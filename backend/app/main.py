@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.db import SessionLocal, engine
 from app.models import Base
+from app.normalize import normalize_enum_values
 from app.routers import auth, goals, tasks, uploads
 from app.seed import seed_demo
 
@@ -15,12 +16,13 @@ from app.seed import seed_demo
 async def lifespan(_: FastAPI):
     Path(settings.upload_dir).mkdir(parents=True, exist_ok=True)
     Base.metadata.create_all(bind=engine)
-    if not settings.skip_seed:
-        db = SessionLocal()
-        try:
+    db = SessionLocal()
+    try:
+        normalize_enum_values(db)
+        if not settings.skip_seed:
             seed_demo(db)
-        finally:
-            db.close()
+    finally:
+        db.close()
     yield
 
 
