@@ -1,0 +1,68 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: goal
+      POSTGRES_PASSWORD: goal
+      POSTGRES_DB: goaltracker
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U goal -d goaltracker"]
+      interval: 3s
+      timeout: 5s
+      retries: 15
+    ports:
+      - "5432:5432"
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      BOT_TOKEN: ${BOT_TOKEN:-000000:changeme}
+      BOT_USERNAME: ${BOT_USERNAME:-}
+      WEBAPP_URL: ${WEBAPP_URL:-http://localhost:8080}
+      DATABASE_URL: postgresql://goal:goal@postgres:5432/goaltracker
+      JWT_SECRET: ${JWT_SECRET:-change-me-to-a-long-random-string}
+      OWNER_TELEGRAM_ID: ${OWNER_TELEGRAM_ID:-1001}
+      DEMO_MODE: ${DEMO_MODE:-true}
+      UPLOAD_DIR: /data/uploads
+    volumes:
+      - uploads:/data/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz')"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 40s
+
+  webapp:
+    build:
+      context: ./webapp
+    depends_on:
+      api:
+        condition: service_started
+    ports:
+      - "8080:80"
+
+  bot:
+    build:
+      context: ./bot
+    environment:
+      BOT_TOKEN: ${BOT_TOKEN:-000000:changeme}
+      WEBAPP_URL: ${WEBAPP_URL:-http://localhost:8080}
+    depends_on:
+      api:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  uploads:
